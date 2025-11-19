@@ -193,11 +193,14 @@
 
     <!-- Script Firebase / Firestore -->
     <script type="module">
+      <!-- Dans le <script type="module"> -->
       import { db } from "./firebase-config.js";
       import {
         collection,
         addDoc,
-      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";  // Mise à jour vers version récente
+      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";  // Même version
+
+      console.log('DB initialisé ?', db);  // Log pour vérifier si db est bien une instance Firestore
 
       const eggForm = document.getElementById("egg-form");
       const eggSuccess = document.getElementById("egg-success");
@@ -222,6 +225,7 @@
         }
 
         try {
+          console.log('Collection arg:', db);  // Log juste avant collection() pour vérifier db
           await addDoc(collection(db, "eggs"), {
             code,
             cours,
@@ -235,7 +239,7 @@
           eggForm.reset();
           eggSuccess.classList.remove("hidden");
         } catch (err) {
-          console.error(err);
+          console.error('Erreur complète:', err);  // Log détaillé de l'erreur
           eggError.classList.remove("hidden");
         }
       });
