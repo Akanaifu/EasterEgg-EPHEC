@@ -113,6 +113,7 @@
                 <textarea
                   id="egg-indice"
                   rows="3"
+                  required
                   class="w-full rounded-xl bg-slate-900/80 border border-slate-700 px-3 py-2 outline-none focus:ring-2 focus:ring-neonBlue focus:border-transparent resize-none"
                   placeholder="Ex : « Regardez près de la salle T302… »"
                 ></textarea>
@@ -196,7 +197,7 @@
       import {
         collection,
         addDoc,
-      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";  // Mise à jour vers version récente
 
       const eggForm = document.getElementById("egg-form");
       const eggSuccess = document.getElementById("egg-success");
@@ -213,6 +214,12 @@
         const indice = document.getElementById("egg-indice").value.trim();
         const maxUses = parseInt(document.getElementById("egg-max").value, 10) || 1;
         const points = parseInt(document.getElementById("egg-points").value, 10) || 0;
+
+        // Check basique pour champs obligatoires (en plus de HTML required)
+        if (!code || !cours || !teacherName || !indice || isNaN(maxUses) || isNaN(points)) {
+          eggError.classList.remove("hidden");
+          return;
+        }
 
         try {
           await addDoc(collection(db, "eggs"), {
