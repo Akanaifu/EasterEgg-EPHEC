@@ -191,16 +191,15 @@
       </div>
     </main>
 
-    <!-- Script Firebase / Firestore -->
     <script type="module">
       <!-- Dans le <script type="module"> -->
       import { db } from "./firebase-config.js";
       import {
         collection,
         addDoc,
-      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";  // Même version
+      } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-      console.log('DB initialisé ?', db);  // Log pour vérifier si db est bien une instance Firestore
+      console.log('DB initialisé ?', db);
 
       const eggForm = document.getElementById("egg-form");
       const eggSuccess = document.getElementById("egg-success");
@@ -218,14 +217,13 @@
         const maxUses = parseInt(document.getElementById("egg-max").value, 10) || 1;
         const points = parseInt(document.getElementById("egg-points").value, 10) || 0;
 
-        // Check basique pour champs obligatoires (en plus de HTML required)
         if (!code || !cours || !teacherName || !indice || isNaN(maxUses) || isNaN(points)) {
           eggError.classList.remove("hidden");
           return;
         }
 
         try {
-          console.log('Collection arg:', db);  // Log juste avant collection() pour vérifier db
+          console.log('Collection arg:', db);
           await addDoc(collection(db, "eggs"), {
             code,
             cours,
@@ -239,10 +237,11 @@
           eggForm.reset();
           eggSuccess.classList.remove("hidden");
         } catch (err) {
-          console.error('Erreur complète:', err);  // Log détaillé de l'erreur
+          console.error('Erreur complète:', err);
           eggError.classList.remove("hidden");
         }
       });
     </script>
   </body>
 </html>
+
