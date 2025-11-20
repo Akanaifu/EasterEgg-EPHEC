@@ -250,7 +250,7 @@
             currentEggDoc = { id: docSnap.id, ...egg };
             step = 2;
             studentFields.classList.remove("hidden");
-            alert("Code valide ! Entre maintenant ton nom et ton matricule.");
+            //alert("Code valide ! Entre maintenant ton nom et ton matricule.");
           } catch (err) {
             console.error(err);
             showError("🛑 Erreur lors de la vérification du code.");
@@ -278,7 +278,7 @@
               usedCount: increment(1),
             });
 
-            alert("Bravo ! Ta découverte a été enregistrée 🎉");
+            //alert("Bravo ! Ta découverte a été enregistrée 🎉");
 
             form.reset();
             studentFields.classList.add("hidden");
@@ -404,3 +404,4 @@
     </script>
   </body>
 </html>
+
