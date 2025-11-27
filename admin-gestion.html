@@ -187,6 +187,11 @@
               </p>
             </div>
           </div>
+          <!-- Liste des codes existants -->
+          <div class="mt-8">
+            <h3 class="font-semibold text-slate-200 mb-2">Codes existants</h3>
+            <div id="egg-list" class="space-y-2 text-xs"></div>
+          </div>
         </div>
       </div>
     </main>
@@ -196,34 +201,93 @@
       import {
         collection,
         addDoc,
+        getDocs,
+        query,
+        where,
+        deleteDoc,
+        doc,
+        onSnapshot
       } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
+    
       console.log('DB initialisé ?', db);
-
+    
       const eggForm = document.getElementById("egg-form");
       const eggSuccess = document.getElementById("egg-success");
       const eggError = document.getElementById("egg-error");
-
+      const eggList = document.getElementById("egg-list");
+      const eggsRef = collection(db, "eggs");
+    
+      /* ============================================================
+         🔥 1. LISTE EN TEMPS RÉEL DES CODES EXISTANTS
+      ============================================================ */
+      onSnapshot(eggsRef, (snapshot) => {
+        eggList.innerHTML = "";
+    
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+    
+          const row = document.createElement("div");
+          row.className =
+            "flex justify-between items-center bg-slate-900/60 border border-slate-800 px-3 py-2 rounded-lg";
+    
+          row.innerHTML = `
+            <div>
+              <p><span class="font-semibold text-neonBlue">Code :</span> ${data.code}</p>
+              <p>Cours : ${data.cours}</p>
+              <p>Prof : ${data.teacherName}</p>
+            </div>
+    
+            <button 
+              class="text-red-400 text-xl px-3 hover:text-red-300"
+              data-id="${docSnap.id}"
+            >
+              ×
+            </button>
+          `;
+    
+          // 🔥 Bouton suppression
+          row.querySelector("button").addEventListener("click", async () => {
+            await deleteDoc(doc(db, "eggs", docSnap.id));
+          });
+    
+          eggList.appendChild(row);
+        });
+      });
+    
+      /* ============================================================
+         🔥 2. AJOUT AVEC VÉRIFICATION D’UN CODE UNIQUE
+      ============================================================ */
       eggForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         eggSuccess.classList.add("hidden");
         eggError.classList.add("hidden");
-
+    
         const code = document.getElementById("egg-code").value.trim();
         const cours = document.getElementById("egg-cours").value.trim();
         const teacherName = document.getElementById("egg-teacher").value.trim();
         const indice = document.getElementById("egg-indice").value.trim();
         const maxUses = parseInt(document.getElementById("egg-max").value, 10) || 1;
         const points = parseInt(document.getElementById("egg-points").value, 10) || 0;
-
-        if (!code || !cours || !teacherName || !indice || isNaN(maxUses) || isNaN(points)) {
+    
+        if (!code || !cours || !teacherName || !indice) {
+          eggError.textContent = "Veuillez remplir tous les champs.";
           eggError.classList.remove("hidden");
           return;
         }
-
+    
         try {
-          console.log('Collection arg:', db);
-          await addDoc(collection(db, "eggs"), {
+          // 🔍 Vérification si le code existe déjà
+          const q = query(eggsRef, where("code", "==", code));
+          const existing = await getDocs(q);
+    
+          if (!existing.empty) {
+            eggError.textContent = "❌ Ce code existe déjà dans la base.";
+            eggError.classList.remove("hidden");
+            return;
+          }
+    
+          // ➕ Ajout dans Firestore
+          await addDoc(eggsRef, {
             code,
             cours,
             teacherName,
@@ -232,17 +296,20 @@
             usedCount: 0,
             points,
           });
-
+    
           eggForm.reset();
           eggSuccess.classList.remove("hidden");
+    
         } catch (err) {
           console.error('Erreur complète:', err);
+          eggError.textContent = "Erreur lors de l'ajout de l'easter egg.";
           eggError.classList.remove("hidden");
         }
       });
     </script>
   </body>
 </html>
+
 
 
 
