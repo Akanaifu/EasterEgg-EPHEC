@@ -256,22 +256,29 @@
             showError("🛑 Erreur lors de la vérification du code.");
           }
         } else if (step === 2 && currentEggDoc) {
-          const studentName = nameInput.value.trim();
-          const matricule = matriculeInput.value.trim();
-
-          if (!studentName || !matricule) {
-            showError("🛑 Merci de compléter nom et matricule.");
-            return;
-          }
-
-          try {
-            await addDoc(collection(db, "discoveries"), {
-              eggId: currentEggDoc.id,
-              studentName,
-              matricule,  // Utilisé comme key unique pour cumul
-              points: currentEggDoc.points ?? 10,
-              createdAt: serverTimestamp(),
-            });
+            const studentName = nameInput.value.trim();
+            let matricule = matriculeInput.value.trim();
+          
+            if (!studentName || !matricule) {
+              showError("🛑 Merci de compléter nom et matricule.");
+              return;
+            }
+          
+            let formattedMatricule = matricule;
+            if (formattedMatricule.length >= 2) {
+              const prefix = formattedMatricule.substring(0, 2).toUpperCase(); 
+              const rest = formattedMatricule.substring(2);
+              formattedMatricule = prefix + rest;
+            }
+          
+            try {
+              await addDoc(collection(db, "discoveries"), {
+                eggId: currentEggDoc.id,
+                studentName,
+                matricule: formattedMatricule,
+                points: currentEggDoc.points ?? 10,
+                createdAt: serverTimestamp(),
+              });
 
             const eggRef = doc(db, "eggs", currentEggDoc.id);
             await updateDoc(eggRef, {
@@ -404,4 +411,5 @@
     </script>
   </body>
 </html>
+
 
