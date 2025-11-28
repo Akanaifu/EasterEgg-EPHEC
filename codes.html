@@ -144,7 +144,7 @@
                 />
               </div>
 
-              <!-- Champs supplémentaires (nom, prénom, classe) si matricule inconnu -->
+              <!-- Champs supplémentaires (prénom, nom, classe) si matricule inconnu -->
               <div id="additional-fields" class="grid grid-cols-1 gap-3 hidden">
                 <input
                   id="student-prenom"
@@ -158,12 +158,15 @@
                   placeholder="Nom"
                   class="rounded-full bg-slate-900/70 border border-slate-700 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-neonBlue focus:border-transparent"
                 />
-                <input
+                <select
                   id="student-class"
-                  type="text"
-                  placeholder="Classe"
                   class="rounded-full bg-slate-900/70 border border-slate-700 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-neonBlue focus:border-transparent"
-                />
+                >
+                  <option value="">Sélectionnez votre classe</option>
+                  <option value="1TI">1TI</option>
+                  <option value="2TI">2TI</option>
+                  <option value="3TI">3TI</option>
+                </select>
               </div>
             </form>
           </div>
@@ -286,8 +289,17 @@
           const formattedMatricule = matricule.toUpperCase();
 
           try {
-            // Check si matricule connu (existe dans discoveries)
+            // Check si déjà validé ce code par ce matricule
             const discoveriesRef = collection(db, "discoveries");
+            const checkQ = query(discoveriesRef, where("matricule", "==", formattedMatricule), where("eggId", "==", currentEggDoc.id), limit(1));
+            const checkSnap = await getDocs(checkQ);
+
+            if (!checkSnap.empty) {
+              showError("🛑 Vous avez déjà validé ce code.");
+              return;
+            }
+
+            // Check si matricule connu
             const q = query(discoveriesRef, where("matricule", "==", formattedMatricule), limit(1));
             const snap = await getDocs(q);
 
