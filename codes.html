@@ -429,7 +429,7 @@
           const arr = Array.from(stats.values());
           arr.sort((a, b) => b.points - a.points);
 
-          const top = arr.slice(0, 10);
+          const top = arr.slice(0, 5);  // Limité à 5
           let html = "";
           let rank = 1;
           top.forEach((p) => {
@@ -512,4 +512,3 @@
     </script>
   </body>
 </html>
-
