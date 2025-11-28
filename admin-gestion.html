@@ -247,7 +247,9 @@
     
           // 🔥 Bouton suppression
           row.querySelector("button").addEventListener("click", async () => {
-            await deleteDoc(doc(db, "eggs", docSnap.id));
+            if (confirm("Êtes-vous sûr de vouloir supprimer ce code ?")) {
+              await deleteDoc(doc(db, "eggs", docSnap.id));
+            }
           });
     
           eggList.appendChild(row);
@@ -309,10 +311,3 @@
     </script>
   </body>
 </html>
-
-
-
-
-
-
-
