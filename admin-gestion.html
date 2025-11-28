@@ -194,6 +194,26 @@
             <div id="egg-list" class="grid grid-cols-2 gap-3 text-xs w-full"></div>
           </div>
       </div>
+
+      <!-- Modal de confirmation (caché par défaut) -->
+      <div id="delete-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-filter backdrop-blur-sm">
+        <div class="glass rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center">
+          <h3 class="text-lg font-semibold mb-4 bg-gradient-to-r from-neonBlue to-neonPink bg-clip-text text-transparent">
+            Confirmer la suppression
+          </h3>
+          <p class="text-sm text-slate-300 mb-6">
+            Êtes-vous sûr de vouloir supprimer ce code ? Cette action est irréversible.
+          </p>
+          <div class="flex gap-4 justify-center">
+            <button id="cancel-delete" class="rounded-xl px-4 py-2 bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition">
+              Annuler
+            </button>
+            <button id="confirm-delete" class="rounded-xl px-4 py-2 bg-gradient-to-r from-red-500 to-red-700 text-xs font-semibold text-white hover:opacity-90 transition">
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script type="module">
@@ -216,6 +236,11 @@
       const eggError = document.getElementById("egg-error");
       const eggList = document.getElementById("egg-list");
       const eggsRef = collection(db, "eggs");
+      const deleteModal = document.getElementById("delete-modal");
+      const confirmDelete = document.getElementById("confirm-delete");
+      const cancelDelete = document.getElementById("cancel-delete");
+    
+      let selectedEggId = null;  // Pour stocker l'ID à supprimer
     
       /* ============================================================
          🔥 1. LISTE EN TEMPS RÉEL DES CODES EXISTANTS
@@ -245,15 +270,36 @@
             </button>
           `;
     
-          // 🔥 Bouton suppression
-          row.querySelector("button").addEventListener("click", async () => {
-            if (confirm("Êtes-vous sûr de vouloir supprimer ce code ?")) {
-              await deleteDoc(doc(db, "eggs", docSnap.id));
-            }
+          // Bouton suppression : ouvre le modal
+          row.querySelector("button").addEventListener("click", () => {
+            selectedEggId = docSnap.id;
+            deleteModal.classList.remove("hidden");
           });
     
           eggList.appendChild(row);
         });
+      });
+    
+      // Gestion du modal
+      cancelDelete.addEventListener("click", () => {
+        deleteModal.classList.add("hidden");
+        selectedEggId = null;
+      });
+    
+      confirmDelete.addEventListener("click", async () => {
+        if (selectedEggId) {
+          await deleteDoc(doc(db, "eggs", selectedEggId));
+          deleteModal.classList.add("hidden");
+          selectedEggId = null;
+        }
+      });
+    
+      // Ferme modal si clic en dehors
+      deleteModal.addEventListener("click", (e) => {
+        if (e.target === deleteModal) {
+          deleteModal.classList.add("hidden");
+          selectedEggId = null;
+        }
       });
     
       /* ============================================================
