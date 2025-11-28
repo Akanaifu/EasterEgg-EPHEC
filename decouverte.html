@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Suivi des Découvertes - Challenge IT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              neonBlue: "#38bdf8",
+              neonPink: "#e879f9",
+              cardBg: "#050816",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        background: radial-gradient(circle at top left, #0ea5e911, transparent 50%),
+          radial-gradient(circle at bottom right, #a855f711, transparent 50%),
+          #020617;
+        color: #e5e7eb;
+      }
+      .grid-bg {
+        background-image:
+          linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+      .glass {
+        background:
+          radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 55%),
+          radial-gradient(circle at bottom right, rgba(236, 72, 153, 0.18), transparent 55%),
+          linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.98));
+        backdrop-filter: blur(18px);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen grid-bg flex flex-col">
+    <main class="flex-1 flex items-center justify-center px-4 pb-12">
+      <div class="relative glass rounded-3xl shadow-2xl px-8 py-10 max-w-4xl w-full">
+        <!-- Croix pour fermer -->
+        <a
+          href="index.html"
+          class="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-slate-900/70 border border-slate-700 text-slate-300 text-sm hover:text-white hover:border-slate-500 transition"
+          title="Fermer"
+        >
+          ×
+        </a>
+
+        <div class="mb-6 text-center">
+          <h1
+            class="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-neonBlue to-neonPink bg-clip-text text-transparent"
+          >
+            Suivi des Découvertes
+          </h1>
+          <p class="text-xs text-slate-400">
+            Liste des découvertes validées par les étudiants.
+          </p>
+        </div>
+
+        <!-- Tableau des découvertes -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-slate-300">
+            <thead class="text-xs uppercase bg-slate-900/80 border-b border-slate-700">
+              <tr>
+                <th class="px-4 py-3">Cours</th>
+                <th class="px-4 py-3">Prof</th>
+                <th class="px-4 py-3">Indice</th>
+                <th class="px-4 py-3">Découvert Par</th>
+                <th class="px-4 py-3">Matricule</th>
+                <th class="px-4 py-3">Découvert Le</th>
+              </tr>
+            </thead>
+            <tbody id="discoveries-table">
+              <tr>
+                <td colspan="6" class="px-4 py-3 text-center text-slate-400">Chargement des découvertes...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- Script Firebase / Firestore -->
+    <script type="module">
+      // Imports CDN pour tout
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+      import { getFirestore, collection, query, getDocs, getDoc, doc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+      // Config inline
+      const firebaseConfig = {
+        apiKey: "AIzaSyA03DcwilaXw7il8CltHAyHJPxuvFBdNso",
+        authDomain: "easter-egg-ephec.firebaseapp.com",
+        projectId: "easter-egg-ephec",
+        storageBucket: "easter-egg-ephec.firebasestorage.app",
+        messagingSenderId: "600758213032",
+        appId: "1:600758213032:web:b4188a883f5a0313f4e59d"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const discoveriesTable = document.getElementById("discoveries-table");
+
+      // Charger les découvertes en temps réel, triées par date desc
+      const discoveriesRef = collection(db, "discoveries");
+      onSnapshot(query(discoveriesRef, orderBy("createdAt", "desc")), async (snapshot) => {
+        discoveriesTable.innerHTML = "";
+
+        if (snapshot.empty) {
+          discoveriesTable.innerHTML = `
+            <tr>
+              <td colspan="6" class="px-4 py-3 text-center text-slate-400">Aucune découverte pour le moment.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          const eggDoc = await getDoc(doc(db, "eggs", data.eggId));
+          const eggData = eggDoc.exists() ? eggDoc.data() : { cours: "Inconnu", teacherName: "Inconnu", indice: "Inconnu" };
+
+          const date = data.createdAt ? new Date(data.createdAt.toMillis()).toISOString().split('T')[0] : "Inconnu";
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td class="px-4 py-3">${eggData.cours}</td>
+            <td class="px-4 py-3">${eggData.teacherName}</td>
+            <td class="px-4 py-3">${eggData.indice}</td>
+            <td class="px-4 py-3">${data.prenom} ${data.nom}</td>
+            <td class="px-4 py-3">${data.matricule}</td>
+            <td class="px-4 py-3">${date}</td>
+          `;
+          discoveriesTable.appendChild(row);
+        }
+      });
+    </script>
+  </body>
+</html>
