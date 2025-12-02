@@ -23,28 +23,59 @@
 
     <style>
       body {
-        background: radial-gradient(circle at top left, #0ea5e911, transparent 50%),
+        background: radial-gradient(
+            circle at top left,
+            #0ea5e911,
+            transparent 50%
+          ),
           radial-gradient(circle at bottom right, #a855f711, transparent 50%),
           #020617;
         color: #e5e7eb;
       }
       .grid-bg {
-        background-image:
-          linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        background-image: linear-gradient(
+            rgba(148, 163, 184, 0.08) 1px,
+            transparent 1px
+          ),
           linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
         background-size: 40px 40px;
       }
       .glass {
-        background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 45%),
-          radial-gradient(circle at bottom right, rgba(236, 72, 153, 0.12), transparent 45%),
-          linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.96));
+        background: radial-gradient(
+            circle at top left,
+            rgba(56, 189, 248, 0.12),
+            transparent 45%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(236, 72, 153, 0.12),
+            transparent 45%
+          ),
+          linear-gradient(
+            135deg,
+            rgba(15, 23, 42, 0.96),
+            rgba(15, 23, 42, 0.96)
+          );
         backdrop-filter: blur(16px);
       }
       @keyframes shake {
-        10%, 90% { transform: translateX(-1px); }
-        20%, 80% { transform: translateX(2px); }
-        30%, 50%, 70% { transform: translateX(-4px); }
-        40%, 60% { transform: translateX(4px); }
+        10%,
+        90% {
+          transform: translateX(-1px);
+        }
+        20%,
+        80% {
+          transform: translateX(2px);
+        }
+        30%,
+        50%,
+        70% {
+          transform: translateX(-4px);
+        }
+        40%,
+        60% {
+          transform: translateX(4px);
+        }
       }
       .shake {
         animation: shake 0.4s;
@@ -64,7 +95,9 @@
 
     <!-- Main -->
     <main class="flex-1 flex items-center justify-center px-4 pb-10">
-      <div class="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-6 items-start">
+      <div
+        class="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-6 items-start"
+      >
         <!-- Colonne gauche : leaderboard -->
         <div class="w-full md:w-1/3 glass rounded-3xl shadow-2xl px-6 py-6">
           <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -120,7 +153,10 @@
             <!-- Formulaire -->
             <form id="code-form" class="mb-4 space-y-4">
               <div>
-                <label for="code" class="block mb-2 text-xs text-slate-300 uppercase tracking-wide">
+                <label
+                  for="code"
+                  class="block mb-2 text-xs text-slate-300 uppercase tracking-wide"
+                >
                   Entrer un code
                 </label>
                 <div class="flex flex-col gap-3">
@@ -193,323 +229,6 @@
       </div>
     </main>
 
-    <!-- Script Firebase / Firestore -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-      import { getFirestore, collection, query, where, getDocs, addDoc, updateDoc, doc, increment, serverTimestamp, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-      const firebaseConfig = { 
-        apiKey: "AIzaSyA03DcwilaXw7il8CltHAyHJPxuvFBdNso",
-        authDomain: "easter-egg-ephec.firebaseapp.com",
-        projectId: "easter-egg-ephec",
-        storageBucket: "easter-egg-ephec.firebasestorage.app",
-        messagingSenderId: "600758213032",
-        appId: "1:600758213032:web:b4188a883f5a0313f4e59d"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-
-      const form = document.getElementById("code-form");
-      const matriculeField = document.getElementById("matricule-field");
-      const additionalFields = document.getElementById("additional-fields");
-      const codeInput = document.getElementById("code");
-      const matriculeInput = document.getElementById("student-matricule");
-      const prenomInput = document.getElementById("student-prenom");
-      const nomInput = document.getElementById("student-nom");
-      const classInput = document.getElementById("student-class");
-      const errorBox = document.getElementById("error-box");
-      const errorText = document.getElementById("error-text");
-      const card = document.getElementById("card");
-      const leaderboardEl = document.getElementById("leaderboard");
-      const hiddenAdminBtn = document.getElementById("hidden-admin-btn");
-      const hintsListEl = document.getElementById("hints-list");
-
-      let currentEggDoc = null;
-      let step = 1; // 1 = code, 2 = matricule, 3 = infos supplémentaires si nouveau
-
-      // Bouton admin caché -> page de login admin
-      hiddenAdminBtn.addEventListener("click", () => {
-        window.location.href = "admin.html";
-      });
-
-      function showError(msg) {
-        errorText.textContent = msg;
-        errorBox.classList.remove("hidden");
-        card.classList.remove("shake");
-        void card.offsetWidth;
-        card.classList.add("shake");
-      }
-
-      function clearError() {
-        errorBox.classList.add("hidden");
-        card.classList.remove("shake");
-      }
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        clearError();
-
-        if (step === 1) {
-          const code = codeInput.value.trim();
-          if (!code) {
-            showError("Merci d'entrer un code.");
-            return;
-          }
-
-          try {
-            const eggsRef = collection(db, "eggs");
-            const q = query(eggsRef, where("code", "==", code));
-            const snap = await getDocs(q);
-
-            if (snap.empty) {
-              showError("🛑 Code invalide. Vérifie le code et réessaie.");
-              return;
-            }
-
-            const docSnap = snap.docs[0];
-            const egg = docSnap.data();
-
-            if (egg.usedCount >= egg.maxUses) {
-              showError("🛑 Ce code a déjà été utilisé le nombre maximal de fois.");
-              return;
-            }
-
-            currentEggDoc = { id: docSnap.id, ...egg };
-            step = 2;
-            matriculeField.classList.remove("hidden");
-            additionalFields.classList.add("hidden");
-            //alert("Code valide ! Entre maintenant ton matricule.");
-          } catch (err) {
-            console.error(err);
-            showError("🛑 Erreur lors de la vérification du code.");
-          }
-        } else if (step === 2 && currentEggDoc) {
-          const matricule = matriculeInput.value.trim();
-
-          if (!matricule.match(/^HE\d{6}$/i)) {
-            showError("🛑 Le matricule doit être au format HExxxxxx (HE suivi de 6 chiffres).");
-            return;
-          }
-
-          const formattedMatricule = matricule.toUpperCase();
-
-          try {
-            // Check si déjà validé ce code par ce matricule
-            const discoveriesRef = collection(db, "discoveries");
-            const checkQ = query(discoveriesRef, where("matricule", "==", formattedMatricule), where("eggId", "==", currentEggDoc.id), limit(1));
-            const checkSnap = await getDocs(checkQ);
-
-            if (!checkSnap.empty) {
-              showError("🛑 Vous avez déjà validé ce code.");
-              return;
-            }
-
-            // Check si matricule connu
-            const q = query(discoveriesRef, where("matricule", "==", formattedMatricule), limit(1));
-            const snap = await getDocs(q);
-
-            if (!snap.empty) {
-              // Connu : Récupère infos existantes et ajoute discovery
-              const existingData = snap.docs[0].data();
-              await addDoc(discoveriesRef, {
-                eggId: currentEggDoc.id,
-                prenom: existingData.prenom,
-                nom: existingData.nom,
-                class: existingData.class,
-                matricule: formattedMatricule,
-                points: currentEggDoc.points ?? 10,
-                createdAt: serverTimestamp(),
-              });
-            } else {
-              // Inconnu : Passe à step 3 pour demander infos
-              step = 3;
-              additionalFields.classList.remove("hidden");
-              //alert("Matricule inconnu. Entre maintenant ton prénom, nom et classe.");
-              return; // Ne submit pas encore
-            }
-
-            const eggRef = doc(db, "eggs", currentEggDoc.id);
-            await updateDoc(eggRef, {
-              usedCount: increment(1),
-            });
-
-            //alert("Bravo ! Ta découverte a été enregistrée 🎉");
-
-            form.reset();
-            matriculeField.classList.add("hidden");
-            additionalFields.classList.add("hidden");
-            currentEggDoc = null;
-            step = 1;
-            clearError();
-
-            // Recharger les indices
-            loadHints();
-          } catch (err) {
-            console.error(err);
-            showError("🛑 Erreur lors de la vérification du matricule.");
-          }
-        } else if (step === 3 && currentEggDoc) {
-          const prenom = prenomInput.value.trim();
-          const nom = nomInput.value.trim();
-          const studentClass = classInput.value.trim();
-          const matricule = matriculeInput.value.trim().toUpperCase();
-
-          if (!prenom || !nom || !studentClass) {
-            showError("🛑 Merci de compléter prénom, nom et classe.");
-            return;
-          }
-
-          try {
-            await addDoc(collection(db, "discoveries"), {
-              eggId: currentEggDoc.id,
-              prenom,
-              nom,
-              class: studentClass,
-              matricule,
-              points: currentEggDoc.points ?? 10,
-              createdAt: serverTimestamp(),
-            });
-
-            const eggRef = doc(db, "eggs", currentEggDoc.id);
-            await updateDoc(eggRef, {
-              usedCount: increment(1),
-            });
-
-            //alert("Bravo ! Ta découverte a été enregistrée 🎉");
-
-            form.reset();
-            matriculeField.classList.add("hidden");
-            additionalFields.classList.add("hidden");
-            currentEggDoc = null;
-            step = 1;
-            clearError();
-
-            // Recharger les indices
-            loadHints();
-          } catch (err) {
-            console.error(err);
-            showError("🛑 Erreur lors de l'enregistrement de ta découverte.");
-          }
-        }
-      });
-
-      // ===== Leaderboard : prénom nom (classe) + points cumulés (groupe par matricule) =====
-      function initLeaderboard() {
-        const discoveriesRef = collection(db, "discoveries");
-
-        onSnapshot(discoveriesRef, (snap) => {
-          if (snap.empty) {
-            leaderboardEl.innerHTML =
-              '<p class="text-slate-400 text-sm">Aucune découverte pour le moment.</p>';
-            return;
-          }
-
-          const stats = new Map();
-
-          snap.forEach((d) => {
-            const data = d.data();
-            const key = data.matricule || "inconnu";
-            if (!stats.has(key)) {
-              stats.set(key, {
-                prenom: data.prenom || "",
-                nom: data.nom || "Anonyme",
-                class: data.class || "",
-                points: 0,
-              });
-            }
-            const entry = stats.get(key);
-            entry.points += data.points ?? 0;
-            // Update infos si plus récentes
-            if (data.prenom) entry.prenom = data.prenom;
-            if (data.nom) entry.nom = data.nom;
-            if (data.class) entry.class = data.class;
-          });
-
-          const arr = Array.from(stats.values());
-          arr.sort((a, b) => b.points - a.points);
-
-          const top = arr.slice(0, 5);  // Limité à 5
-          let html = "";
-          let rank = 1;
-          top.forEach((p) => {
-            const fullName = `${p.prenom} ${p.nom}`.trim();
-            const displayClass = p.class ? `(${p.class})` : '';
-            html += `
-              <div class="flex items-center justify-between rounded-2xl bg-slate-900/80 border border-slate-800 px-4 py-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs font-semibold text-slate-100">
-                    ${rank++}
-                  </div>
-                  <div>
-                    <p class="font-semibold">${fullName}</p>
-                    <p class="text-xs text-slate-400">${displayClass}</p>
-                  </div>
-                </div>
-                <p class="font-semibold text-neonBlue">${p.points} pts</p>
-              </div>
-            `;
-          });
-
-          leaderboardEl.innerHTML = html;
-        });
-      }
-
-      // ===== Indices des codes restants =====
-      async function loadHints() {
-        try {
-          const eggsRef = collection(db, "eggs");
-          const snap = await getDocs(eggsRef);
-
-          if (snap.empty) {
-            hintsListEl.innerHTML =
-              '<p class="text-slate-400 text-sm">Aucun Easter Egg configuré pour le moment.</p>';
-            return;
-          }
-
-          const items = [];
-          snap.forEach((d) => {
-            const egg = d.data();
-            const remaining = (egg.maxUses ?? 0) - (egg.usedCount ?? 0);
-            if (remaining > 0) {
-              items.push({
-                cours: egg.cours || "Cours / bloc inconnu",
-                indice: egg.indice || "Pas d'indice communiqué.",
-                teacher: egg.teacherName || "Professeur anonyme",
-                remaining,
-              });
-            }
-          });
-
-          if (items.length === 0) {
-            hintsListEl.innerHTML =
-              '<p class="text-slate-400 text-sm">Tous les Easter Eggs ont été découverts pour le moment.</p>';
-            return;
-          }
-
-          let html = "";
-          items.forEach((item) => {
-            html += `
-              <div class="rounded-2xl bg-slate-900/80 border border-slate-800 px-4 py-3">
-                <p class="text-xs font-semibold text-neonBlue mb-1">${item.cours}</p>
-                <p class="text-sm text-slate-200 mb-1">${item.indice}</p>
-                <p class="text-xs text-slate-400 mb-1">Proposé par ${item.teacher}</p>
-                <p class="text-xs text-slate-500">Encore ${item.remaining} validation(s) possible(s).</p>
-              </div>
-            `;
-          });
-
-          hintsListEl.innerHTML = html;
-        } catch (err) {
-          console.error(err);
-          hintsListEl.innerHTML =
-            '<p class="text-red-400 text-sm">Erreur lors du chargement des indices.</p>';
-        }
-      }
-
-      initLeaderboard();
-      loadHints();
-    </script>
+    <script type="module" src="scripts/codes.js"></script>
   </body>
 </html>
-
